@@ -122,17 +122,19 @@ public class ForecastAdapter extends CursorAdapter {
         viewHolder.dateView.setText(Utility.getFriendlyDayString(mContext, cursor.getLong(ForecastFragment.COL_WEATHER_DATE)));
 
         String description = cursor.getString(ForecastFragment.COL_WEATHER_DESC);
-        viewHolder.descriptionView.setText(description);
+        viewHolder.descriptionView.setContentDescription(context.getString(R.string.a11y_forecast, description));
 
-        // For accessibility, add a content description to the icon field
-        viewHolder.iconView.setContentDescription(description);
 
         // Read high temperature from cursor
         double high = cursor.getDouble(ForecastFragment.COL_WEATHER_MAX_TEMP);
-        viewHolder.highTempView.setText(Utility.formatTemperature(mContext, high));
+        String maxTemp = Utility.formatTemperature(mContext, high);
+        viewHolder.highTempView.setText(maxTemp);
+        viewHolder.highTempView.setContentDescription(context.getString(R.string.a11y_high_temp, high));
 
         double low = cursor.getDouble(ForecastFragment.COL_WEATHER_MIN_TEMP);
-        viewHolder.lowTempView.setText(Utility.formatTemperature(mContext, low));
+        String lowTemp = Utility.formatTemperature(mContext, low);
+        viewHolder.lowTempView.setText(lowTemp);
+        viewHolder.lowTempView.setContentDescription(context.getString(R.string.a11y_low_temp, low));
 
     }
 

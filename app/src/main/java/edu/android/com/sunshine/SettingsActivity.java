@@ -6,6 +6,7 @@ package edu.android.com.sunshine;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
@@ -16,16 +17,19 @@ import android.preference.PreferenceManager;
 
 import com.example.android.sunshine.app.R;
 
+import edu.android.com.sunshine.data.WeatherContract;
+import edu.android.com.sunshine.sync.SunshineSyncAdapter;
+
 /**
  * A {@link PreferenceActivity} that presents a set of application settings.
- * <p>
+ * <p/>
  * See <a href="http://developer.android.com/design/patterns/settings.html">
  * Android Design: Settings</a> for design guidelines and the <a
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
 public class SettingsActivity extends PreferenceActivity
-        implements Preference.OnPreferenceChangeListener {
+        implements Preference.OnPreferenceChangeListener, SharedPreferences.OnSharedPreferenceChangeListener {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -57,7 +61,6 @@ public class SettingsActivity extends PreferenceActivity
                             .getDefaultSharedPreferences(preference.getContext())
                             .getBoolean(preference.getKey(), true));
         } else {
-
             onPreferenceChange(preference,
                     PreferenceManager
                             .getDefaultSharedPreferences(preference.getContext())
@@ -80,6 +83,17 @@ public class SettingsActivity extends PreferenceActivity
             }
         } else {
             // For other preferences, set the summary to the value's simple string representation.
+            if (preference.getKey().equals(getString(R.string.pref_location_key))) {
+                int locationStatus = Utility.getLocationStatus(this);
+                switch (locationStatus) {
+                    case SunshineSyncAdapter.LOCATION_STATUS_UNKNOWN:
+                        stringValue = getString(R.string.pref_location_unknown_description, stringValue);
+                        break;
+                    case SunshineSyncAdapter.LOCATION_STATUS_INVALID:
+                        stringValue = getString(R.string.pref_location_error_description, stringValue);
+                        break;
+                }
+            }
             preference.setSummary(stringValue);
         }
         return true;
@@ -92,4 +106,29 @@ public class SettingsActivity extends PreferenceActivity
 
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(getString(R.string.pref_location_key))) {
+            // we've changed the location
+            // first clear locationStatus
+            Utility.resetLocationStatus(this);
+            SunshineSyncAdapter.syncImmediately(this);
+        } else if (key.equals(getString(R.string.pref_units_key))) {
+            // units have changed. update lists of weather entries accordingly
+            getContentResolver().notifyChange(WeatherContract.WeatherEntry.CONTENT_URI, null);
+        }
+    }
+
+    @Override
+    public void onResume() {
+        PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
+        super.onResume();
+
+    }
+
+    @Override
+    public void onPause() {
+        PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
+        super.onPause();
+    }
 }
