@@ -11,7 +11,6 @@ import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.widget.Button;
 
-import com.example.android.sunshine.app.R;
 
 /**
  * Created by edu on 04/10/2015.

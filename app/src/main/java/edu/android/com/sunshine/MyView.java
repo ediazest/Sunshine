@@ -9,8 +9,6 @@ import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 
-import com.example.android.sunshine.app.R;
-
 /**
  * Created by edu on 25/08/2015.
  */

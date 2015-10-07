@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.android.sunshine.app">
+    package="edu.android.com.sunshine">
 
     <!-- This permission is necessary in order for Sunshine to perform network access. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Permissions required to make our UI more friendly -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Permissions required by the sync adapter -->
@@ -11,13 +12,21 @@
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
 
+    <!-- Permissions required for Google Cloud Messaging -->
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+    <permission
+        android:name="com.example.android.sunshine.app.permission.C2D_MESSAGE"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.example.android.sunshine.app.permission.C2D_MESSAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name="edu.android.com.sunshine.MainActivity"
+            android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/ForecastTheme">
             <intent-filter>
@@ -35,9 +44,9 @@
                 android:value="edu.android.com.sunshine.MainActivity" />
         </activity>
         <activity
-            android:name="edu.android.com.sunshine.SettingsActivity"
+            android:name=".SettingsActivity"
             android:label="@string/title_activity_settings"
-            android:parentActivityName="edu.android.com.sunshine.MainActivity"
+            android:parentActivityName=".MainActivity"
             android:theme="@style/SettingsTheme">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -45,13 +54,13 @@
         </activity>
 
         <provider
-            android:name="edu.android.com.sunshine.data.WeatherProvider"
+            android:name=".data.WeatherProvider"
             android:authorities="edu.android.com.sunshine.app"
             android:exported="false"
             android:syncable="true" />
 
         <!-- SyncAdapter's dummy authentication service -->
-        <service android:name="edu.android.com.sunshine.sync.SunshineAuthenticatorService">
+        <service android:name=".sync.SunshineAuthenticatorService">
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
@@ -62,7 +71,7 @@
 
         <!-- The SyncAdapter service -->
         <service
-            android:name="edu.android.com.sunshine.sync.SunshineSyncService"
+            android:name=".sync.SunshineSyncService"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
@@ -71,6 +80,17 @@
                 android:name="android.content.SyncAdapter"
                 android:resource="@xml/syncadapter" />
         </service>
+
+        <!--GCM receiver - Commented out until we write the class-->
+        <receiver
+            android:name=".GcmBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <category android:name="com.example.android.sunshine.app" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

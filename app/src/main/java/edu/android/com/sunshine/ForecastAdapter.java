@@ -13,7 +13,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.android.sunshine.app.R;
+import com.bumptech.glide.Glide;
 
 import edu.android.com.sunshine.data.WeatherContract;
 
@@ -112,10 +112,16 @@ public class ForecastAdapter extends CursorAdapter {
         int resourceId = R.mipmap.ic_launcher;
         switch (viewType) {
             case VIEW_TYPE_FUTURE_DAY:
-                viewHolder.iconView.setImageResource(Utility.getIconResourceForWeatherCondition(weatherId));
+                Glide.with(mContext)
+                        .load(Utility.getArtUrlForWeatherCondition(mContext, weatherId))
+                        .error(Utility.getIconResourceForWeatherCondition(weatherId))
+                        .into(viewHolder.iconView);
                 break;
             case VIEW_TYPE_TODAY:
-                viewHolder.iconView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
+                Glide.with(mContext)
+                        .load(Utility.getArtUrlForWeatherCondition(mContext, weatherId))
+                        .error(Utility.getArtResourceForWeatherCondition(weatherId))
+                        .into(viewHolder.iconView);
                 break;
         }
 
