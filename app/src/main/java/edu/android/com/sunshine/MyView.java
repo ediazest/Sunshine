@@ -84,13 +84,13 @@ public class MyView extends View {
         mCirclePaint.setAntiAlias(true);
         mCirclePaint.setStrokeWidth(5);
         mCirclePaint.setStyle(Paint.Style.STROKE);
-        mCirclePaint.setColor(getContext().getResources().getColor(R.color.sunshine_dark_blue));
+        mCirclePaint.setColor(getContext().getResources().getColor(R.color.primary_dark));
 
         mCenterPaint = new Paint();
         mCenterPaint.setAntiAlias(true);
         mCenterPaint.setStrokeWidth(5);
         mCenterPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        mCenterPaint.setColor(getContext().getResources().getColor(R.color.sunshine_dark_blue));
+        mCenterPaint.setColor(getContext().getResources().getColor(R.color.primary_dark));
 
         mArrowPaint = new Paint();
         mArrowPaint.setAntiAlias(true);

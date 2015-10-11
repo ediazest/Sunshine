@@ -100,46 +100,56 @@ public class ForecastAdapter extends CursorAdapter {
         */
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
-        // our view is pretty simple here --- just a text view
-        // we'll keep the UI functional with a simple (and slow!) binding.
-
         ViewHolder viewHolder = (ViewHolder) view.getTag();
-
-        // Read weather icon ID from cursor
         int weatherId = cursor.getInt(ForecastFragment.COL_WEATHER_CONDITION_ID);
+        int fallbackIconId;
         int viewType = getItemViewType(cursor.getPosition());
-
-        int resourceId = R.mipmap.ic_launcher;
         switch (viewType) {
-            case VIEW_TYPE_FUTURE_DAY:
-                Glide.with(mContext)
-                        .load(Utility.getArtUrlForWeatherCondition(mContext, weatherId))
-                        .error(Utility.getIconResourceForWeatherCondition(weatherId))
-                        .into(viewHolder.iconView);
+            case VIEW_TYPE_TODAY: {
+                // Get weather icon
+                fallbackIconId = Utility.getArtResourceForWeatherCondition(
+                        weatherId);
                 break;
-            case VIEW_TYPE_TODAY:
-                Glide.with(mContext)
-                        .load(Utility.getArtUrlForWeatherCondition(mContext, weatherId))
-                        .error(Utility.getArtResourceForWeatherCondition(weatherId))
-                        .into(viewHolder.iconView);
+            }
+            default: {
+                // Get weather icon
+                fallbackIconId = Utility.getIconResourceForWeatherCondition(
+                        weatherId);
                 break;
+            }
         }
 
-        viewHolder.dateView.setText(Utility.getFriendlyDayString(mContext, cursor.getLong(ForecastFragment.COL_WEATHER_DATE)));
+        Glide.with(mContext)
+                .load(Utility.getArtUrlForWeatherCondition(mContext, weatherId))
+                .error(fallbackIconId)
+                .crossFade()
+                .into(viewHolder.iconView);
 
-        String description = cursor.getString(ForecastFragment.COL_WEATHER_DESC);
+        // Read date from cursor
+        long dateInMillis = cursor.getLong(ForecastFragment.COL_WEATHER_DATE);
+        // Find TextView and set formatted date on it
+        viewHolder.dateView.setText(Utility.getFriendlyDayString(context, dateInMillis));
+
+        // Get description from weather condition ID
+        String description = Utility.getStringForWeatherCondition(context, weatherId);
+        // Find TextView and set weather forecast on it
+        viewHolder.descriptionView.setText(description);
         viewHolder.descriptionView.setContentDescription(context.getString(R.string.a11y_forecast, description));
 
+        // For accessibility, we don't want a content description for the icon field
+        // because the information is repeated in the description view and the icon
+        // is not individually selectable
 
         // Read high temperature from cursor
-        double high = cursor.getDouble(ForecastFragment.COL_WEATHER_MAX_TEMP);
-        String maxTemp = Utility.formatTemperature(mContext, high);
-        viewHolder.highTempView.setText(maxTemp);
+        String high = Utility.formatTemperature(
+                context, cursor.getDouble(ForecastFragment.COL_WEATHER_MAX_TEMP));
+        viewHolder.highTempView.setText(high);
         viewHolder.highTempView.setContentDescription(context.getString(R.string.a11y_high_temp, high));
 
-        double low = cursor.getDouble(ForecastFragment.COL_WEATHER_MIN_TEMP);
-        String lowTemp = Utility.formatTemperature(mContext, low);
-        viewHolder.lowTempView.setText(lowTemp);
+        // Read low temperature from cursor
+        String low = Utility.formatTemperature(
+                context, cursor.getDouble(ForecastFragment.COL_WEATHER_MIN_TEMP));
+        viewHolder.lowTempView.setText(low);
         viewHolder.lowTempView.setContentDescription(context.getString(R.string.a11y_low_temp, low));
 
     }
