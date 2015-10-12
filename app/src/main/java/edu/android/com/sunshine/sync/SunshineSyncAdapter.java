@@ -49,6 +49,7 @@ import edu.android.com.sunshine.MainActivity;
 import edu.android.com.sunshine.R;
 import edu.android.com.sunshine.Utility;
 import edu.android.com.sunshine.data.WeatherContract;
+import edu.android.com.sunshine.muzei.WeatherMuzeiSource;
 
 public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     // Interval at which to sync with the weather, in seconds.
@@ -63,6 +64,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
             LOCATION_STATUS_UNKNOWN = 3;
     public static final int
             LOCATION_STATUS_INVALID = 4;
+    public static final String ACTION_DATA_UPDATED = "edu.android.com.sunshine.ACTION_DATA_UPDATED";
     private static final long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
     private static final int WEATHER_NOTIFICATION_ID = 3004;
     private static final String[] NOTIFY_WEATHER_PROJECTION = new String[]{
@@ -440,6 +442,8 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                         new String[]{Long.toString(dayTime.setJulianDay(julianStartDay - 1))});
 
                 notifyWeather();
+                updateMuzei();
+                notifyWidgets();
             }
             Log.d(LOG_TAG, "Sync Complete. " + cVVector.size() + " Inserted");
             setLocationStatus(getContext(), LOCATION_STATUS_OK);
@@ -448,6 +452,23 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
             Log.e(LOG_TAG, e.getMessage(), e);
             e.printStackTrace();
             setLocationStatus(getContext(), LOCATION_STATUS_SERVER_INVALID);
+        }
+    }
+
+    private void notifyWidgets() {
+        Context context = getContext();
+        // Setting the package ensures that only components in our app will receive the broadcast
+        Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED).setPackage(context.getPackageName());
+        context.sendBroadcast(dataUpdatedIntent);
+    }
+
+    private void updateMuzei() {
+        // Muzei is only compatible with Jelly Bean MR1+ devices, so there's no need to update the
+        // Muzei background on lower API level devices
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            Context context = getContext();
+            context.startService(new Intent(ACTION_DATA_UPDATED)
+                    .setClass(context, WeatherMuzeiSource.class));
         }
     }
 

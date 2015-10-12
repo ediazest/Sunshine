@@ -25,6 +25,7 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import java.io.IOException;
 
+import edu.android.com.sunshine.data.WeatherContract;
 import edu.android.com.sunshine.sync.SunshineSyncAdapter;
 
 public class MainActivity extends AppCompatActivity implements ForecastFragment.Callback {
@@ -61,16 +62,20 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        mLocation = Utility.getPreferredLocation(this);
-
         super.onCreate(savedInstanceState);
+
+        mLocation = Utility.getPreferredLocation(this);
+        Uri contentUri = getIntent() != null ? getIntent().getData() : null;
+
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        if (getSupportFragmentManager() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        }
 
         if (findViewById(R.id.weather_detail_container) != null) {
             // The detail container view will be present only in the large-screen layouts
@@ -81,8 +86,16 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
             // adding or replacing the detail fragment using a
             // fragment transaction.
             if (savedInstanceState == null) {
+
+                DetailActivityFragment fragment = new DetailActivityFragment();
+                if (contentUri != null) {
+                    Bundle args = new Bundle();
+                    args.putParcelable(DetailActivityFragment.DETAIL_URI, contentUri);
+                    fragment.setArguments(args);
+                }
+
                 getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.weather_detail_container, new DetailActivityFragment(), DETAILFRAGMENT_TAG)
+                        .replace(R.id.weather_detail_container, fragment, DETAILFRAGMENT_TAG)
                         .commit();
             }
         } else {
@@ -92,6 +105,11 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
 
         ForecastFragment forecastFragment = ((ForecastFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_forecast));
         forecastFragment.setUseTodayLayout(!mTwoPane);
+
+        if (contentUri != null) {
+            forecastFragment.setInitialSelectedDate(
+                    WeatherContract.WeatherEntry.getDateFromUri(contentUri));
+        }
 
         SunshineSyncAdapter.initializeSyncAdapter(this);
 
