@@ -28,7 +28,7 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:theme="@style/ForecastTheme">
+            android:theme="@style/AppThemeMain">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -38,7 +38,8 @@
         <activity
             android:name="edu.android.com.sunshine.DetailActivity"
             android:label="@string/title_activity_detail"
-            android:parentActivityName="edu.android.com.sunshine.MainActivity">
+            android:parentActivityName="edu.android.com.sunshine.MainActivity"
+            android:theme="@style/AppThemeDetails">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="edu.android.com.sunshine.MainActivity" />

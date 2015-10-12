@@ -6,4 +6,21 @@
         <item name="android:colorPrimaryDark">@color/primary_dark</item>
     </style>
 
+    <!-- DetailFragmentTheme. -->
+    <style name="AppThemeDetails" parent="@style/AppTheme">
+        <item name="android:windowContentTransitions">true</item>
+        <item name="android:windowEnterTransition">@transition/details_window_enter_transition
+        </item>
+        <item name="android:windowReturnTransition">@transition/details_window_return_transition
+        </item>
+    </style>
+
+
+    <!-- Main activity theme. -->
+    <style name="AppThemeMain" parent="AppTheme">
+        <item name="actionBarStyle">@style/ActionBar.Solid.Sunshine.NoTitle</item>
+        <item name="android:windowContentTransitions">true</item>
+    </style>
+
+
 </resources>

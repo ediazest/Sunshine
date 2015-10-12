@@ -10,4 +10,8 @@
         <item name="android:background">@color/primary</item>
         <item name="android:height">56dp</item>
     </style>
+
+    <style name="AppThemeMain" parent="AppTheme">
+        <item name="actionBarStyle">@style/ActionBar.Solid.Sunshine.NoTitle</item>
+    </style>
 </resources>

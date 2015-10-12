@@ -9,9 +9,7 @@
     </style>
 
     <!-- Main activity theme. -->
-    <style name="ForecastTheme" parent="AppTheme">
-        <item name="actionBarStyle">@style/ActionBar.Solid.Sunshine.NoTitle</item>
-    </style>
+    <style name="AppThemeMain" parent="AppTheme"></style>
 
     <!-- Settings activity theme. -->
     <style name="SettingsTheme" parent="AppTheme"></style>
@@ -32,5 +30,12 @@
         <item name="android:background">?attr/colorPrimary</item>
         <item name="popupTheme">@style/Theme.AppCompat.Light</item>
     </style>
+
+
+    <!-- DetailFragmentTheme. -->
+    <style name="AppThemeDetails" parent="@style/AppTheme"></style>
+
+    <!-- DetailFragmentTheme. -->
+    <style name="AppThemeForecast" parent="@style/AppTheme"></style>
 
 </resources>
