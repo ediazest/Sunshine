@@ -210,5 +210,7 @@
 
     <!-- For Shared Element Transitions -->
     <string name="detail_icon_transition_name" translatable="false">TN_DetailIcon</string>
+
+    <string name="api_key" translatable="false">SIGN FOR API KEY</string>
 </resources>
 
