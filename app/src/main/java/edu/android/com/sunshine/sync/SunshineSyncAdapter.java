@@ -29,12 +29,21 @@ import android.text.format.Time;
 import android.util.Log;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.Asset;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -51,7 +60,7 @@ import edu.android.com.sunshine.Utility;
 import edu.android.com.sunshine.data.WeatherContract;
 import edu.android.com.sunshine.muzei.WeatherMuzeiSource;
 
-public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
+public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     // Interval at which to sync with the weather, in seconds.
     // 60 seconds (1 minute) * 180 = 3 hours
     public static final int SYNC_INTERVAL = 60 * 180;
@@ -65,6 +74,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     public static final int
             LOCATION_STATUS_INVALID = 4;
     public static final String ACTION_DATA_UPDATED = "edu.android.com.sunshine.ACTION_DATA_UPDATED";
+
     private static final long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
     private static final int WEATHER_NOTIFICATION_ID = 3004;
     private static final String[] NOTIFY_WEATHER_PROJECTION = new String[]{
@@ -78,7 +88,13 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     private static final int INDEX_MAX_TEMP = 1;
     private static final int INDEX_MIN_TEMP = 2;
     private static final int INDEX_SHORT_DESC = 3;
+    private static final String FORECAST_PATH = "/forecast";
+    private static final String IMG_KEY = "image";
+    private static final String MAX_TEMP_KEY = "maxTemp";
+    private static final String MIN_TEMP_KEY = "minTemp";
     public final String LOG_TAG = SunshineSyncAdapter.class.getSimpleName();
+
+    private GoogleApiClient mGoogleApiClient;
 
     public SunshineSyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
@@ -190,9 +206,24 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         spe.commit();
     }
 
+    private static Asset createAssetFromBitmap(Bitmap bitmap) {
+        final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteStream);
+        return Asset.createFromBytes(byteStream.toByteArray());
+    }
+
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
         Log.d(LOG_TAG, "Starting sync");
+
+        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                .addApi(Wearable.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+
+        mGoogleApiClient.connect();
+
         String locationQuery = Utility.getPreferredLocation(getContext());
 
         // These two need to be declared outside the try/catch
@@ -277,6 +308,9 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 } catch (final IOException e) {
                     Log.e(LOG_TAG, "Error closing stream", e);
                 }
+            }
+            if (mGoogleApiClient.isConnected()) {
+                mGoogleApiClient.disconnect();
             }
         }
 
@@ -414,6 +448,10 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 JSONObject temperatureObject = dayForecast.getJSONObject(OWM_TEMPERATURE);
                 high = temperatureObject.getDouble(OWM_MAX);
                 low = temperatureObject.getDouble(OWM_MIN);
+
+                if (i == 0) {
+                    notifyWatchFace(high, low, weatherId);
+                }
 
                 ContentValues weatherValues = new ContentValues();
 
@@ -571,10 +609,42 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                     SharedPreferences.Editor editor = prefs.edit();
                     editor.putLong(lastNotificationKey, System.currentTimeMillis());
                     editor.commit();
+
                 }
                 cursor.close();
             }
         }
+    }
+
+    private void notifyWatchFace(double high, double low, int weatherId) {
+
+        Log.d(LOG_TAG, "notifyWatchFace");
+        int artResourceId = Utility.getArtResourceForWeatherCondition(weatherId);
+
+        PutDataMapRequest putDataMapReq = PutDataMapRequest.create(FORECAST_PATH);
+
+        String lowString = Utility.formatTemperature(getContext(), low);
+        String highString = Utility.formatTemperature(getContext(), high);
+        putDataMapReq.getDataMap().putString(MAX_TEMP_KEY, highString);
+        putDataMapReq.getDataMap().putString(MIN_TEMP_KEY, lowString);
+
+        Bitmap bitmap = BitmapFactory.decodeResource(getContext().getResources(), artResourceId);
+        Asset asset = createAssetFromBitmap(bitmap);
+
+        putDataMapReq.getDataMap().putAsset(IMG_KEY, asset);
+
+        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+
+        Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq)
+                .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+                    @Override
+                    public void onResult(DataApi.DataItemResult dataItemResult) {
+                        if (!dataItemResult.getStatus().isSuccess()) {
+                            Log.e(LOG_TAG, "Error sending data to wearable, status code: "
+                                    + dataItemResult.getStatus().getStatusCode());
+                        }
+                    }
+                });
     }
 
     /**
@@ -625,6 +695,23 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         locationCursor.close();
         // Wait, that worked?  Yes!
         return locationId;
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        Log.d(LOG_TAG, "onConnected: " + bundle);
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+
+        Log.d(LOG_TAG, "onConnectionSuspended: " + cause);
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+        Log.d(LOG_TAG, "onConnectionFailed: " + connectionResult);
     }
 
     @Retention(RetentionPolicy.SOURCE)
